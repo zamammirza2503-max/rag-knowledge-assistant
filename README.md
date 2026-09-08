@@ -67,29 +67,3 @@ Run:
 ```bash
 streamlit run app.py
 ```
-
-## Demo questions
-
-Try:
-
-- `How many vacation days do employees receive?`
-- `What is the remote work policy?`
-- `What happens if a laptop is damaged?`
-
-## Interview explanation
-
-**Why RAG?** The model should answer from company-specific documents rather than relying only on model knowledge.
-
-**Why embeddings?** They let us retrieve semantically related chunks even when the wording of the question differs from the wording in the document.
-
-**Why cosine similarity?** It is a simple and transparent way to rank embedding vectors.
-
-**What would I improve for production?**
-
-- Persistent vector database such as pgvector/Qdrant
-- Chunking based on document structure
-- Metadata filtering
-- Retrieval evaluation
-- Reranking
-- Authentication and observability
-- Streaming responses and caching
