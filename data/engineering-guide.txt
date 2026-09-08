@@ -1,0 +1,9 @@
+Engineering Guide
+
+Pull requests require at least one reviewer before merging into the main branch.
+
+Production incidents should be documented in an incident report within 48 hours.
+
+For customer-facing services, engineers should add automated tests for important business logic.
+
+Secrets must never be committed to Git repositories. Use environment variables or a managed secret store.

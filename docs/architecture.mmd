@@ -1,0 +1,7 @@
+flowchart LR
+A[Question] --> B[Embedding]
+B --> C[Cosine Similarity]
+C --> D[Top-k Chunks]
+D --> E[Prompt with Context]
+E --> F[OpenAI Responses API]
+F --> G[Grounded Answer]
