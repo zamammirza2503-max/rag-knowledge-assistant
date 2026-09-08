@@ -10,7 +10,7 @@ load_dotenv()
 
 st.set_page_config(page_title="RAG Knowledge Assistant", page_icon="📚", layout="wide")
 st.title("📚 RAG Knowledge Assistant")
-st.caption("A small semantic-search + LLM application designed to be easy to explain in an interview.")
+st.caption("A small semantic-search + LLM application.")
 
 if not os.getenv("OPENAI_API_KEY"):
     st.warning("Set OPENAI_API_KEY in .env before asking questions.")

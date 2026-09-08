@@ -14,7 +14,7 @@ A small, Retrieval-Augmented Generation (RAG) application built with **Python, S
 
 ## Architecture
 
-![Architecture](docs/architecture.png)
+![RAG Knowledge Assistant](docs/RAG-Knowledge-Assistant.png)
 
 ```text
 User question
