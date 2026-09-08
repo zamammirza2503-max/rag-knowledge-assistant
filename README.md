@@ -1,6 +1,6 @@
 # RAG Knowledge Assistant
 
-A small, Retrieval-Augmented Generation (RAG) application built with **Python, Streamlit, OpenAI embeddings, cosine similarity, and the OpenAI Responses API**.
+A small, Retrieval-Augmented Generation (RAG) application built with Python, Streamlit, OpenAI embeddings, cosine similarity, and the OpenAI Responses API.
 
 ## What it demonstrates
 
@@ -10,7 +10,6 @@ A small, Retrieval-Augmented Generation (RAG) application built with **Python, S
 - Grounded LLM answers with source names
 - A simple, understandable RAG pipeline
 - Streamlit UI
-- No framework magic: retrieval logic is implemented directly in Python
 
 ## Architecture
 
