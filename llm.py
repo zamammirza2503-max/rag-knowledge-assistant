@@ -9,9 +9,10 @@ Settings are read from Streamlit secrets (Streamlit Community Cloud) or
 environment variables / a local .env file.
 """
 import os
+import time
 
 from dotenv import load_dotenv
-from openai import APIStatusError, OpenAI
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
 
 load_dotenv()
 
@@ -41,28 +42,61 @@ def make_client():
             "No API key found. Add GEMINI_API_KEY to the app's secrets "
             "(Streamlit Cloud: App settings -> Secrets) or to a local .env file."
         )
-    return OpenAI(api_key=key, base_url=setting("LLM_BASE_URL", GEMINI_BASE_URL))
+    return OpenAI(api_key=key, base_url=setting("LLM_BASE_URL", GEMINI_BASE_URL), timeout=60, max_retries=2)
 
 
 def chat_models():
-    """Preferred chat model first, then fallbacks in case a model name was retired."""
-    preferred = setting("CHAT_MODEL", "gemini-flash-latest")
-    fallbacks = ["gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-flash-lite-latest"]
+    """Preferred chat model first, then fallbacks in case a model is retired or overloaded."""
+    if "googleapis.com" in setting("LLM_BASE_URL", GEMINI_BASE_URL):
+        preferred = setting("CHAT_MODEL", "gemini-flash-latest")
+        fallbacks = ["gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-flash-lite-latest"]
+    else:  # OpenAI or another OpenAI-compatible provider
+        preferred = setting("CHAT_MODEL", "gpt-5.4-mini")
+        fallbacks = ["gpt-5.4-mini", "gpt-4.1-mini"]
     return [preferred] + [m for m in fallbacks if m != preferred]
 
 
+RETRY_STATUS = {429, 500, 502, 503, 504}  # busy / temporarily unavailable
+
+
 def chat(client, **kwargs):
-    """chat.completions.create with automatic fallback if a model name is not found."""
+    """chat.completions.create with retries and model fallback.
+
+    - 404 (model name unknown): try the next model.
+    - 429/5xx (overloaded, rate limit): wait briefly, retry, then try the next model.
+    """
     last_error = None
     for model in chat_models():
-        try:
-            return client.chat.completions.create(model=model, **kwargs)
-        except APIStatusError as e:
-            if e.status_code == 404:  # model name does not exist (any more)
+        for attempt in range(2):
+            try:
+                return client.chat.completions.create(model=model, **kwargs)
+            except APIStatusError as e:
                 last_error = e
-                continue
-            raise
+                if e.status_code == 404:
+                    break  # next model
+                if e.status_code in RETRY_STATUS:
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                raise
+            except (APIConnectionError, APITimeoutError) as e:
+                last_error = e
+                time.sleep(1.5 * (attempt + 1))
     raise last_error
+
+
+def embed(client, model, texts):
+    """embeddings.create with retries for temporary errors."""
+    for attempt in range(4):
+        try:
+            return client.embeddings.create(model=model, input=texts)
+        except APIStatusError as e:
+            if e.status_code not in RETRY_STATUS or attempt == 3:
+                raise
+            time.sleep(2 * (attempt + 1))
+        except (APIConnectionError, APITimeoutError):
+            if attempt == 3:
+                raise
+            time.sleep(2 * (attempt + 1))
 
 
 def friendly_error(e):
@@ -70,6 +104,8 @@ def friendly_error(e):
     if isinstance(e, APIStatusError):
         if e.status_code == 429:
             return "The free API limit was reached. Wait a minute and try again."
+        if e.status_code in (500, 502, 503, 504):
+            return "Google's AI service is busy right now (temporary). Please try again in a few seconds."
         if e.status_code in (401, 403):
             return "The API key was rejected. Check GEMINI_API_KEY in the app secrets."
         return f"The AI service returned an error ({e.status_code})."

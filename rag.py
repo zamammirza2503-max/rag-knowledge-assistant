@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from llm import chat, make_client, setting
+from llm import chat, embed, make_client, setting
 
 WORD = re.compile(r"[a-z0-9]+(?:[-.][a-z0-9]+)*")
 STOPWORDS = set(
@@ -90,7 +90,7 @@ class RAGEngine:
     def _embed(self, texts):
         vectors = []
         for i in range(0, len(texts), 90):  # API accepts up to 100 inputs per call
-            resp = self.client.embeddings.create(model=self.embedding_model, input=texts[i:i + 90])
+            resp = embed(self.client, self.embedding_model, texts[i:i + 90])
             vectors += [d.embedding for d in resp.data]
         m = np.asarray(vectors, dtype=np.float32)
         return m / np.clip(np.linalg.norm(m, axis=1, keepdims=True), 1e-9, None)
